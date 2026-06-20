@@ -74,8 +74,7 @@ class FandomSort {
   }
 
   resize() {
-    const maxW = 420;
-    const w = Math.min(window.innerWidth, maxW);
+    const w = window.innerWidth;
     const h = window.innerHeight;
     this.canvas.style.width = w + 'px';
     this.canvas.style.height = h + 'px';
@@ -86,7 +85,9 @@ class FandomSort {
     this.h = h;
     this.laneW = w / 4;
     this.hitY = h * 0.82;
-    this.tileH = 56;
+    this.tileH = Math.max(44, Math.min(60, h * 0.07));
+    this.isMobile = ('ontouchstart' in window) || window.innerWidth <= 600;
+    this.fontSize = this.isMobile ? Math.max(7, w * 0.022) : 10;
   }
 
   // ---- Input ----
@@ -105,16 +106,20 @@ class FandomSort {
       e.preventDefault();
       for (const t of e.changedTouches) {
         const rect = this.canvas.getBoundingClientRect();
-        const lane = Math.floor((t.clientX - rect.left) / this.laneW);
+        const x = t.clientX - rect.left;
+        const lane = Math.floor(x / (rect.width / 4));
         if (lane >= 0 && lane < 4) this.handleTap(lane);
       }
     }, { passive: false });
 
     this.canvas.addEventListener('mousedown', (e) => {
       const rect = this.canvas.getBoundingClientRect();
-      const lane = Math.floor((e.clientX - rect.left) / this.laneW);
+      const x = e.clientX - rect.left;
+      const lane = Math.floor(x / (rect.width / 4));
       if (lane >= 0 && lane < 4) this.handleTap(lane);
     });
+
+    document.addEventListener('touchmove', (e) => e.preventDefault(), { passive: false });
   }
 
   handleTap(lane) {
@@ -329,11 +334,13 @@ class FandomSort {
       ctx.shadowBlur = 0;
     }
 
-    ctx.font = '10px "Press Start 2P", monospace';
-    ctx.textAlign = 'center';
-    for (let i = 0; i < 4; i++) {
-      ctx.fillStyle = GROUPS[i].color + '50';
-      ctx.fillText(GROUPS[i].key.toUpperCase(), i * this.laneW + this.laneW / 2, this.hitY + 28);
+    if (!this.isMobile) {
+      ctx.font = this.fontSize + 'px "Press Start 2P", monospace';
+      ctx.textAlign = 'center';
+      for (let i = 0; i < 4; i++) {
+        ctx.fillStyle = GROUPS[i].color + '50';
+        ctx.fillText(GROUPS[i].key.toUpperCase(), i * this.laneW + this.laneW / 2, this.hitY + 28);
+      }
     }
   }
 
@@ -408,7 +415,7 @@ class FandomSort {
 
       ctx.globalAlpha = alpha;
       ctx.fillStyle = fb.color;
-      ctx.font = 'bold 12px "Press Start 2P", monospace';
+      ctx.font = 'bold ' + (this.fontSize + 2) + 'px "Press Start 2P", monospace';
       ctx.textAlign = 'center';
 
       ctx.shadowColor = fb.color;
@@ -420,38 +427,42 @@ class FandomSort {
   }
 
   drawHUD(ctx, w) {
-    const grad = ctx.createLinearGradient(0, 0, 0, 72);
+    const fs = this.fontSize;
+    const hudH = Math.max(60, this.h * 0.09);
+    const grad = ctx.createLinearGradient(0, 0, 0, hudH);
     grad.addColorStop(0, 'rgba(0,0,0,0.7)');
     grad.addColorStop(1, 'rgba(0,0,0,0)');
     ctx.fillStyle = grad;
-    ctx.fillRect(0, 0, w, 72);
+    ctx.fillRect(0, 0, w, hudH);
+
+    const pad = Math.max(8, w * 0.025);
 
     ctx.fillStyle = '#fff';
-    ctx.font = '9px "Press Start 2P", monospace';
+    ctx.font = (fs - 1) + 'px "Press Start 2P", monospace';
     ctx.textAlign = 'left';
-    ctx.fillText(this.chart.title, 10, 18);
+    ctx.fillText(this.chart.title, pad, hudH * 0.28);
 
     ctx.fillStyle = '#888';
-    ctx.font = '7px "Press Start 2P", monospace';
-    ctx.fillText(this.chart.artist, 10, 30);
+    ctx.font = (fs - 3) + 'px "Press Start 2P", monospace';
+    ctx.fillText(this.chart.artist, pad, hudH * 0.48);
 
     ctx.fillStyle = '#FFD700';
-    ctx.font = '11px "Press Start 2P", monospace';
+    ctx.font = (fs + 1) + 'px "Press Start 2P", monospace';
     ctx.textAlign = 'right';
-    ctx.fillText(this.score.toLocaleString(), w - 10, 18);
+    ctx.fillText(this.score.toLocaleString(), w - pad, hudH * 0.28);
 
     if (this.combo > 1) {
       ctx.fillStyle = '#fff';
-      ctx.font = '9px "Press Start 2P", monospace';
-      ctx.fillText(this.combo + ' COMBO', w - 10, 32);
+      ctx.font = (fs - 1) + 'px "Press Start 2P", monospace';
+      ctx.fillText(this.combo + ' COMBO', w - pad, hudH * 0.48);
     }
     if (this.multiplier > 1) {
       ctx.fillStyle = '#00FF88';
-      ctx.font = '8px "Press Start 2P", monospace';
-      ctx.fillText('×' + this.multiplier, w - 10, 44);
+      ctx.font = (fs - 2) + 'px "Press Start 2P", monospace';
+      ctx.fillText('×' + this.multiplier, w - pad, hudH * 0.65);
     }
 
-    const hx = 10, hy = 52, hw = w - 20, hh = 8;
+    const hx = pad, hy = hudH * 0.8, hw = w - pad * 2, hh = Math.max(6, hudH * 0.12);
     ctx.fillStyle = 'rgba(255,255,255,0.08)';
     roundRect(ctx, hx, hy, hw, hh, 4);
     ctx.fill();
@@ -483,7 +494,7 @@ class FandomSort {
     ctx.scale(scale, scale);
     ctx.globalAlpha = 0.5 + frac * 0.5;
     ctx.fillStyle = '#FFD700';
-    ctx.font = '48px "Press Start 2P", monospace';
+    ctx.font = Math.min(48, w * 0.12) + 'px "Press Start 2P", monospace';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText(count.toString(), 0, 0);
@@ -491,7 +502,7 @@ class FandomSort {
     ctx.globalAlpha = 1;
 
     ctx.fillStyle = '#C1C8FE';
-    ctx.font = '10px "Press Start 2P", monospace';
+    ctx.font = this.fontSize + 'px "Press Start 2P", monospace';
     ctx.textAlign = 'center';
     ctx.fillText('GET READY', w / 2, h / 2 + 50);
   }

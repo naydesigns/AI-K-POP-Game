@@ -13,6 +13,19 @@ html, body {
   background: #0a0a1a;
   font-family: 'Press Start 2P', monospace;
   color: #fff;
+  position: fixed;
+  touch-action: none;
+  overscroll-behavior: none;
+  -webkit-overflow-scrolling: none;
+}
+
+html {
+  height: -webkit-fill-available;
+}
+
+body {
+  min-height: 100vh;
+  min-height: -webkit-fill-available;
 }
 
 .screen {
@@ -23,6 +36,7 @@ html, body {
   align-items: center;
   justify-content: center;
   background: linear-gradient(135deg, #1ec9b7 0%, #6b5be8 100%);
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
 }
 
 .screen.active {
@@ -76,7 +90,7 @@ html, body {
 }
 
 .title {
-  font-size: 35px;
+  font-size: clamp(24px, 8vw, 35px);
   line-height: 58px;
   letter-spacing: 3.6px;
   color: #7cf9e2;
@@ -104,7 +118,7 @@ html, body {
   padding: 18px 44px;
   font-family: 'Inter', 'Press Start 2P', monospace;
   font-weight: 700;
-  font-size: 18px;
+  font-size: clamp(14px, 4vw, 18px);
   color: #000;
   background: #ffe033;
   border: 2.5px solid #000;
@@ -115,6 +129,7 @@ html, body {
   transition: transform 0.1s, box-shadow 0.1s;
   position: relative;
   text-transform: uppercase;
+  -webkit-appearance: none;
 }
 
 .btn-play:active {
@@ -124,9 +139,9 @@ html, body {
 
 .btn-secondary {
   display: inline-block;
-  padding: 12px 32px;
+  padding: 14px 36px;
   font-family: 'Press Start 2P', monospace;
-  font-size: 11px;
+  font-size: clamp(9px, 2.5vw, 11px);
   color: #aaa;
   background: rgba(255,255,255,0.08);
   border: 2px solid rgba(255,255,255,0.15);
@@ -135,6 +150,7 @@ html, body {
   letter-spacing: 2px;
   margin-top: 12px;
   transition: background 0.15s;
+  -webkit-appearance: none;
 }
 
 .btn-secondary:active {
@@ -152,6 +168,7 @@ html, body {
 
 #game-screen {
   background: none;
+  padding: 0;
 }
 
 #game-screen::before {
@@ -181,7 +198,7 @@ html, body {
 }
 
 .results-title {
-  font-size: 20px;
+  font-size: clamp(16px, 5vw, 20px);
   color: #7cf9e2;
   letter-spacing: 4px;
   margin-bottom: 8px;
@@ -189,7 +206,7 @@ html, body {
 }
 
 .results-song {
-  font-size: 9px;
+  font-size: clamp(7px, 2vw, 9px);
   color: rgba(255,255,255,0.7);
   letter-spacing: 2px;
   margin-bottom: 32px;
@@ -212,14 +229,14 @@ html, body {
 
 .stat-value {
   display: block;
-  font-size: 22px;
+  font-size: clamp(16px, 5vw, 22px);
   color: #ffe033;
   margin-bottom: 8px;
 }
 
 .stat-label {
   display: block;
-  font-size: 7px;
+  font-size: clamp(6px, 1.5vw, 7px);
   color: rgba(255,255,255,0.6);
   letter-spacing: 1px;
 }
@@ -227,7 +244,7 @@ html, body {
 /* ---- Fail Screen ---- */
 
 .fail-title {
-  font-size: 32px;
+  font-size: clamp(24px, 8vw, 32px);
   color: #FF4444;
   letter-spacing: 4px;
   text-shadow: 0 4px 4px rgba(0,0,0,1);
@@ -235,13 +252,13 @@ html, body {
 }
 
 .fail-sub {
-  font-size: 9px;
+  font-size: clamp(8px, 2.2vw, 9px);
   color: rgba(255,255,255,0.6);
   margin-bottom: 24px;
 }
 
 .fail-score {
-  font-size: 12px;
+  font-size: clamp(10px, 3vw, 12px);
   color: #ffe033;
   margin-bottom: 32px;
 }
@@ -256,4 +273,74 @@ html, body {
   position: absolute;
   top: -10px;
   right: -10px;
+}
+
+/* ---- Responsive ---- */
+
+.desktop-only { display: block; }
+.mobile-only { display: none; }
+
+@media (pointer: coarse) {
+  .desktop-only { display: none; }
+  .mobile-only { display: block; }
+}
+
+@media (max-width: 420px) {
+  .home-content {
+    padding: 12px;
+  }
+
+  .title {
+    margin-top: 20px;
+  }
+
+  .tv-container {
+    width: 105%;
+    margin: -5px auto 12px;
+  }
+
+  .btn-play {
+    padding: 16px 32px;
+    width: calc(100% - 40px);
+    max-width: 300px;
+  }
+
+  .btn-secondary {
+    padding: 14px 28px;
+    width: calc(100% - 60px);
+    max-width: 260px;
+  }
+
+  .results-grid {
+    gap: 8px;
+  }
+
+  .stat-box {
+    padding: 12px 6px;
+  }
+}
+
+@media (max-height: 600px) {
+  .title {
+    font-size: 22px;
+    line-height: 36px;
+    margin-top: 10px;
+  }
+
+  .tv-container {
+    width: 60%;
+    margin: 0 auto 10px;
+  }
+
+  .btn-play {
+    padding: 12px 28px;
+  }
+
+  .keys-hint {
+    margin-top: 10px;
+  }
+
+  .results-grid {
+    margin-bottom: 16px;
+  }
 }
