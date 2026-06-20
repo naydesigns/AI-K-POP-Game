@@ -1,4 +1,4 @@
-# Fandom Sort — Product Requirements Document
+# GlowRush — Product Requirements Document
 
 **Version:** 2.0  
 **Owner:** Nayeon  
@@ -9,11 +9,11 @@
 
 ## Overview
 
-Fandom Sort is a K-pop themed rhythm tile game, inspired by the mechanic of Magic Tiles 3 (Amanotes). Players tap falling lightstick tiles in sync with a beat across 4 color-coded lanes — each lane representing an idol group. Clearing a song unlocks a photocard from that group's collection.
+GlowRush is a K-pop themed rhythm tile game, inspired by the mechanic of Magic Tiles 3 (Amanotes). Players tap falling lightstick tiles in sync with a beat across 4 color-coded lanes — each lane representing an idol group. Clearing a song unlocks a photocard from that group's collection.
 
 The K-pop theme is intrinsic to the mechanic: lanes are idol group colors, tiles are lightstick shapes, and the concert atmosphere (crowd, lights, idol portrait in the background) makes it feel like playing along at a live show.
 
-The project is being built and documented simultaneously as a portfolio case study. The design process, decisions, and artifacts are logged in `kpop-collect-devlog.md`.
+The project is being built and documented simultaneously as a portfolio case study. The design process, decisions, and artifacts are logged in `glowrush-devlog.md`.
 
 ---
 
@@ -114,7 +114,7 @@ Price point is $0.99 across all three — impulse-buy friction is near zero, and
 All screens use the retro anime Y2K aesthetic: teal-to-purple gradient background, subtle grid overlay, black offset shadows, pixel-style uppercase typography, sparkle (✦) decorations. The design of light sticks and k-pop idols on photo cards should be IP free and AI generated images that matches the aesthetic.
 
 ### 1. Home Screen (`1:2`)
-- Title: Fandom Sort
+- Title: GlowRush
 - 3 idol group portrait cards (NOVA / STELLA / ECHO) with black offset shadow and nameplate
 - Yellow arcade-style PLAY NOW button
 - Footer: collection link

@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>GLOWRUSH</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@700&family=Press+Start+2P&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- Home Screen -->
+  <div id="home-screen" class="screen active">
+    <div class="grid-overlay"></div>
+    <div class="home-content">
+      <h1 class="title">GLOWRUSH</h1>
+      <div class="tv-container">
+        <img src="assets/tv-idol.png" alt="VEIL K-pop group" class="tv-image">
+      </div>
+      <button id="btn-play" class="btn-play">SELECT MEMBER ▶</button>
+      <p class="keys-hint">KEYS: D F J K</p>
+    </div>
+  </div>
+
+  <!-- Game Screen (Canvas) -->
+  <div id="game-screen" class="screen">
+    <canvas id="game-canvas"></canvas>
+  </div>
+
+  <!-- Results Screen -->
+  <div id="results-screen" class="screen">
+    <div class="results-content">
+      <h2 class="results-title">WAVE COMPLETE</h2>
+      <div class="results-song" id="result-song-name"></div>
+      <div class="results-grid">
+        <div class="stat-box">
+          <span class="stat-value" id="result-score">0</span>
+          <span class="stat-label">SCORE</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-value" id="result-perfect">0</span>
+          <span class="stat-label">PERFECT HITS</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-value" id="result-accuracy">0%</span>
+          <span class="stat-label">ACCURACY %</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-value" id="result-combo">0</span>
+          <span class="stat-label">MAX COMBO</span>
+        </div>
+      </div>
+      <button id="btn-replay" class="btn-play">PLAY AGAIN</button>
+      <button id="btn-home" class="btn-secondary">HOME</button>
+    </div>
+  </div>
+
+  <!-- Fail Screen -->
+  <div id="fail-screen" class="screen">
+    <div class="fail-content">
+      <h2 class="fail-title">FAILED!</h2>
+      <p class="fail-sub">Don't give up, fan!</p>
+      <div class="fail-score">SCORE: <span id="fail-score-val">0</span></div>
+      <button id="btn-revive" class="btn-play">
+        <span class="popular-tag">POPULAR</span>
+        REVIVE $0.99
+      </button>
+      <button id="btn-quit" class="btn-secondary">QUIT</button>
+    </div>
+  </div>
+
+  <script src="js/game.js"></script>
+</body>
+</html>

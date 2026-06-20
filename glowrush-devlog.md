@@ -1,4 +1,4 @@
-# KPOP Collect — Dev Log
+# GlowRush — Dev Log
 
 A running log of design and development sessions, written for a portfolio case study audience.
 

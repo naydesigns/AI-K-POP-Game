@@ -1,0 +1,259 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #0a0a1a;
+  font-family: 'Press Start 2P', monospace;
+  color: #fff;
+}
+
+.screen {
+  position: fixed;
+  inset: 0;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #1ec9b7 0%, #6b5be8 100%);
+}
+
+.screen.active {
+  display: flex;
+}
+
+/* ---- Grid overlay ---- */
+
+.grid-overlay {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.14) 0.6px, transparent 0.6px),
+    linear-gradient(90deg, rgba(255,255,255,0.14) 0.6px, transparent 0.6px);
+  background-size: 37px 37px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.screen::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.14) 0.6px, transparent 0.6px),
+    linear-gradient(90deg, rgba(255,255,255,0.14) 0.6px, transparent 0.6px);
+  background-size: 37px 37px;
+  pointer-events: none;
+}
+
+/* ---- Home Screen ---- */
+
+#home-screen {
+  background: linear-gradient(135deg, #1ec9b7 0%, #6b5be8 100%);
+}
+
+#home-screen::before {
+  display: none;
+}
+
+.home-content {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  padding: 20px;
+  width: 100%;
+  max-width: 402px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.title {
+  font-size: 35px;
+  line-height: 58px;
+  letter-spacing: 3.6px;
+  color: #7cf9e2;
+  text-shadow: 0 4px 4px rgba(0,0,0,1);
+  margin-top: 40px;
+  margin-bottom: 0;
+}
+
+.tv-container {
+  width: 110%;
+  max-width: 440px;
+  margin: -10px auto 20px;
+  position: relative;
+}
+
+.tv-image {
+  width: 100%;
+  height: auto;
+  display: block;
+  pointer-events: none;
+}
+
+.btn-play {
+  display: inline-block;
+  padding: 18px 44px;
+  font-family: 'Inter', 'Press Start 2P', monospace;
+  font-weight: 700;
+  font-size: 18px;
+  color: #000;
+  background: #ffe033;
+  border: 2.5px solid #000;
+  border-radius: 0;
+  box-shadow: 0 6px 0 #000;
+  cursor: pointer;
+  letter-spacing: 1.44px;
+  transition: transform 0.1s, box-shadow 0.1s;
+  position: relative;
+  text-transform: uppercase;
+}
+
+.btn-play:active {
+  transform: translateY(4px);
+  box-shadow: 0 2px 0 #000;
+}
+
+.btn-secondary {
+  display: inline-block;
+  padding: 12px 32px;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 11px;
+  color: #aaa;
+  background: rgba(255,255,255,0.08);
+  border: 2px solid rgba(255,255,255,0.15);
+  border-radius: 0;
+  cursor: pointer;
+  letter-spacing: 2px;
+  margin-top: 12px;
+  transition: background 0.15s;
+}
+
+.btn-secondary:active {
+  background: rgba(255,255,255,0.15);
+}
+
+.keys-hint {
+  font-size: 8px;
+  color: rgba(255,255,255,0.35);
+  margin-top: 24px;
+  letter-spacing: 3px;
+}
+
+/* ---- Game Screen ---- */
+
+#game-screen {
+  background: none;
+}
+
+#game-screen::before {
+  display: none;
+}
+
+#game-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+}
+
+/* ---- Results Screen ---- */
+
+#results-screen, #fail-screen {
+  background: linear-gradient(135deg, #1ec9b7 0%, #6b5be8 100%);
+}
+
+.results-content, .fail-content {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  padding: 20px;
+  width: 100%;
+  max-width: 380px;
+}
+
+.results-title {
+  font-size: 20px;
+  color: #7cf9e2;
+  letter-spacing: 4px;
+  margin-bottom: 8px;
+  text-shadow: 0 4px 4px rgba(0,0,0,1);
+}
+
+.results-song {
+  font-size: 9px;
+  color: rgba(255,255,255,0.7);
+  letter-spacing: 2px;
+  margin-bottom: 32px;
+}
+
+.results-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 32px;
+}
+
+.stat-box {
+  background: rgba(0,0,0,0.25);
+  border: 2px solid rgba(255,255,255,0.15);
+  border-radius: 0;
+  padding: 16px 8px;
+  box-shadow: 4px 4px 0 rgba(0,0,0,0.5);
+}
+
+.stat-value {
+  display: block;
+  font-size: 22px;
+  color: #ffe033;
+  margin-bottom: 8px;
+}
+
+.stat-label {
+  display: block;
+  font-size: 7px;
+  color: rgba(255,255,255,0.6);
+  letter-spacing: 1px;
+}
+
+/* ---- Fail Screen ---- */
+
+.fail-title {
+  font-size: 32px;
+  color: #FF4444;
+  letter-spacing: 4px;
+  text-shadow: 0 4px 4px rgba(0,0,0,1);
+  margin-bottom: 8px;
+}
+
+.fail-sub {
+  font-size: 9px;
+  color: rgba(255,255,255,0.6);
+  margin-bottom: 24px;
+}
+
+.fail-score {
+  font-size: 12px;
+  color: #ffe033;
+  margin-bottom: 32px;
+}
+
+.popular-tag {
+  display: inline-block;
+  background: #FF4D7A;
+  color: #fff;
+  font-size: 7px;
+  padding: 3px 6px;
+  border-radius: 0;
+  position: absolute;
+  top: -10px;
+  right: -10px;
+}
