@@ -514,6 +514,8 @@ class FandomSort {
 
     if (id === 'game') {
       document.getElementById('game-screen').classList.add('active');
+    } else if (id === 'select') {
+      document.getElementById('select-screen').classList.add('active');
     } else if (id === 'results') {
       const el = document.getElementById('results-screen');
       el.classList.add('active');
@@ -554,7 +556,32 @@ document.addEventListener('DOMContentLoaded', async () => {
   const game = new FandomSort();
   await game.loadChart('charts/neon-lights.json');
 
-  document.getElementById('btn-play').addEventListener('click', () => game.start());
+  let selectedMember = null;
+  const memberCards = document.querySelectorAll('.member-card');
+  const btnStart = document.getElementById('btn-start');
+
+  document.getElementById('btn-play').addEventListener('click', () => {
+    selectedMember = null;
+    memberCards.forEach(c => c.classList.remove('selected'));
+    btnStart.classList.add('btn-disabled');
+    game.showScreen('select');
+  });
+
+  memberCards.forEach(card => {
+    card.addEventListener('click', () => {
+      memberCards.forEach(c => c.classList.remove('selected'));
+      card.classList.add('selected');
+      selectedMember = card.dataset.member;
+      btnStart.classList.remove('btn-disabled');
+    });
+  });
+
+  btnStart.addEventListener('click', () => {
+    if (!selectedMember) return;
+    game.selectedMember = selectedMember;
+    game.start();
+  });
+
   document.getElementById('btn-replay').addEventListener('click', () => game.start());
   document.getElementById('btn-home').addEventListener('click', () => game.showScreen('home'));
   document.getElementById('btn-quit').addEventListener('click', () => game.showScreen('home'));
