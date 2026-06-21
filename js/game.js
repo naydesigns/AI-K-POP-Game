@@ -272,21 +272,9 @@ class FandomSort {
   }
 
   drawBackground(ctx, w, h) {
-    const grad = ctx.createLinearGradient(0, 0, 0, h);
-    grad.addColorStop(0, '#0a0a1a');
-    grad.addColorStop(0.5, '#120a24');
-    grad.addColorStop(1, '#0a1a1a');
-    ctx.fillStyle = grad;
+    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = 'rgba(5, 5, 15, 0.65)';
     ctx.fillRect(0, 0, w, h);
-
-    ctx.strokeStyle = 'rgba(255,255,255,0.025)';
-    ctx.lineWidth = 1;
-    for (let x = 0; x < w; x += 24) {
-      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
-    }
-    for (let y = 0; y < h; y += 24) {
-      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
-    }
   }
 
   drawLanes(ctx, w, h) {
@@ -514,9 +502,6 @@ class FandomSort {
 
     if (id === 'game') {
       document.getElementById('game-screen').classList.add('active');
-    } else if (id === 'level') {
-      document.getElementById('level-screen').classList.add('active');
-      document.getElementById('level-song-name').textContent = this.chart.title + ' — ' + this.chart.artist;
     } else if (id === 'results') {
       const el = document.getElementById('results-screen');
       el.classList.add('active');
@@ -557,14 +542,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   const game = new FandomSort();
   await game.loadChart('charts/neon-lights.json');
 
-  function showLevelIntro() {
-    game.sfx.init();
-    game.showScreen('level');
-    setTimeout(() => game.start(), 2500);
-  }
-
-  document.getElementById('btn-play').addEventListener('click', showLevelIntro);
-  document.getElementById('btn-replay').addEventListener('click', showLevelIntro);
+  document.getElementById('btn-play').addEventListener('click', () => game.start());
+  document.getElementById('btn-replay').addEventListener('click', () => game.start());
   document.getElementById('btn-home').addEventListener('click', () => game.showScreen('home'));
   document.getElementById('btn-quit').addEventListener('click', () => game.showScreen('home'));
   document.getElementById('btn-revive').addEventListener('click', () => {
