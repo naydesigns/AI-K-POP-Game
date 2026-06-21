@@ -204,6 +204,14 @@ class FandomSort {
   async loadChart(url) {
     const res = await fetch(url);
     this.chart = await res.json();
+    if (this.chart.audio) {
+      this.music = new Audio(this.chart.audio);
+      this.music.preload = 'auto';
+      await new Promise((resolve) => {
+        this.music.addEventListener('canplaythrough', resolve, { once: true });
+        this.music.load();
+      });
+    }
   }
 
   start() {
@@ -215,6 +223,12 @@ class FandomSort {
     this.state = 'playing';
     this.showScreen('game');
     this.startTime = performance.now() + COUNTDOWN_MS;
+    if (this.music) {
+      this.music.currentTime = 0;
+      setTimeout(() => {
+        if (this.state === 'playing') this.music.play();
+      }, COUNTDOWN_MS);
+    }
     this.loop();
   }
 
@@ -248,6 +262,10 @@ class FandomSort {
   endGame(screen) {
     this.state = screen;
     if (this.animFrame) cancelAnimationFrame(this.animFrame);
+    if (this.music) {
+      this.music.pause();
+      this.music.currentTime = 0;
+    }
     setTimeout(() => this.showScreen(screen), 300);
   }
 
@@ -540,7 +558,7 @@ function roundRect(ctx, x, y, w, h, r) {
 
 document.addEventListener('DOMContentLoaded', async () => {
   const game = new FandomSort();
-  await game.loadChart('charts/neon-lights.json');
+  await game.loadChart('charts/neon-frequency.json');
 
   document.getElementById('btn-play').addEventListener('click', () => game.start());
   document.getElementById('btn-replay').addEventListener('click', () => game.start());

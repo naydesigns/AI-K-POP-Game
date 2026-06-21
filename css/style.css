@@ -360,3 +360,29 @@ body {
   }
 
 }
+
+/* ---- Footer ---- */
+.site-footer {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: env(safe-area-inset-bottom, 12px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding-bottom: calc(env(safe-area-inset-bottom, 32px));
+  pointer-events: none;
+  z-index: 60;
+  color: rgba(255,255,255,0.7);
+  font-family: 'Press Start 2P', monospace;
+  font-size: clamp(10px, 2.2vw, 12px);
+  letter-spacing: 1px;
+}
+
+@media (max-width: 420px) {
+  .site-footer {
+    font-size: clamp(9px, 3.2vw, 11px);
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+}
