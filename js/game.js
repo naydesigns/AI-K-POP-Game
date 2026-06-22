@@ -554,6 +554,73 @@ function roundRect(ctx, x, y, w, h, r) {
   ctx.closePath();
 }
 
+// ---- Firebase & Leaderboard ----
+
+let db = null;
+try {
+  firebase.initializeApp({
+    apiKey: "AIzaSyC42eeZ4G7jBgamowNoMEBGBW7SO4ZHIpk",
+    authDomain: "glowrush-5810a.firebaseapp.com",
+    projectId: "glowrush-5810a",
+    storageBucket: "glowrush-5810a.firebasestorage.app",
+    messagingSenderId: "1023934124578",
+    appId: "1:1023934124578:web:691726936e17669323b07b"
+  });
+  db = firebase.firestore();
+} catch (e) {
+  console.warn('Firebase init failed:', e);
+}
+
+const Leaderboard = {
+  getPlayerName() {
+    return localStorage.getItem('glowrush_name') || '';
+  },
+
+  setPlayerName(name) {
+    localStorage.setItem('glowrush_name', name);
+  },
+
+  async submitScore(score, accuracy, maxCombo) {
+    if (!db) return;
+    const name = this.getPlayerName();
+    if (!name) return;
+    await db.collection('leaderboard').add({
+      name,
+      score,
+      accuracy,
+      maxCombo,
+      timestamp: firebase.firestore.FieldValue.serverTimestamp()
+    });
+  },
+
+  async fetchTop(count = 20) {
+    if (!db) return [];
+    const snap = await db.collection('leaderboard')
+      .orderBy('score', 'desc')
+      .limit(count)
+      .get();
+    return snap.docs.map(d => d.data());
+  },
+
+  renderList(scores) {
+    const el = document.getElementById('leaderboard-list');
+    if (!scores.length) {
+      el.innerHTML = '<p class="lb-empty">NO SCORES YET. BE THE FIRST!</p>';
+      return;
+    }
+    const medals = ['👑', '⭐', '✦'];
+    el.innerHTML = scores.map((s, i) => {
+      const rankClass = i < 3 ? ` top-${i + 1}` : '';
+      const rank = i < 3 ? medals[i] : `${i + 1}`;
+      return `<div class="lb-row${rankClass}">
+        <span class="lb-rank">${rank}</span>
+        <span class="lb-name">${s.name}</span>
+        <span class="lb-score">${s.score.toLocaleString()}</span>
+      </div>`;
+    }).join('');
+  }
+};
+
 // ---- Init ----
 
 document.addEventListener('DOMContentLoaded', async () => {

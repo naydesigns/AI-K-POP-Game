@@ -7,6 +7,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@700&family=Press+Start+2P&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 </head>
 <body>
 
@@ -21,7 +23,6 @@
       <button id="btn-play" class="btn-play">PLAY ▶</button>
       <p class="keys-hint desktop-only">KEYS: D F J K</p>
       <p class="keys-hint mobile-only">TAP THE LANES TO PLAY</p>
-      
     </div>
   </div>
 
@@ -62,7 +63,7 @@
   <!-- Fail Screen -->
   <div id="fail-screen" class="screen">
     <div class="fail-content">
-      <h2 class="fail-title">FAILED!</h2>
+      <h2 class="fail-title">Try Again!</h2>
       <p class="fail-sub">Don't give up, fan!</p>
       <div class="fail-score">SCORE: <span id="fail-score-val">0</span></div>
       <button id="btn-revive" class="btn-play">
