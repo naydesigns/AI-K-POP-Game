@@ -21,7 +21,12 @@
         <img src="assets/tv-idol.png" alt="VEIL K-pop group" class="tv-image">
       </div>
       <button id="btn-play" class="btn-play">PLAY ▶</button>
-      <p class="keys-hint desktop-only">KEYS: D F J K</p>
+      <div class="keyboard-hint desktop-only">
+        <span class="key-cap">D</span>
+        <span class="key-cap">F</span>
+        <span class="key-cap">J</span>
+        <span class="key-cap">K</span>
+      </div>
       <p class="keys-hint mobile-only">TAP THE LANES TO PLAY</p>
     </div>
   </div>
@@ -62,15 +67,12 @@
 
   <!-- Fail Screen -->
   <div id="fail-screen" class="screen">
+    <img src="assets/veil-group.png" alt="" class="fail-bg">
     <div class="fail-content">
-      <h2 class="fail-title">Try Again!</h2>
+      <h2 class="fail-title">TRY AGAIN!</h2>
       <p class="fail-sub">Don't give up, fan!</p>
       <div class="fail-score">SCORE: <span id="fail-score-val">0</span></div>
-      <button id="btn-revive" class="btn-play">
-        <span class="popular-tag">POPULAR</span>
-        REVIVE $0.99
-      </button>
-      <button id="btn-quit" class="btn-secondary">QUIT</button>
+      <button id="btn-quit" class="btn-play">PLAY AGAIN</button>
     </div>
   </div>
 

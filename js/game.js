@@ -341,12 +341,29 @@ class FandomSort {
     }
 
     if (!this.isMobile) {
-      ctx.font = this.fontSize + 'px "Press Start 2P", monospace';
+      const keySize = 32;
+      const keyFont = 14;
       ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
       for (let i = 0; i < 4; i++) {
-        ctx.fillStyle = GROUPS[i].color + '50';
-        ctx.fillText(GROUPS[i].key.toUpperCase(), i * this.laneW + this.laneW / 2, this.hitY + 28);
+        const kx = i * this.laneW + this.laneW / 2;
+        const ky = this.hitY + 30;
+        const color = GROUPS[i].color;
+
+        ctx.fillStyle = 'rgba(0,0,0,0.5)';
+        roundRect(ctx, kx - keySize / 2, ky - keySize / 2, keySize, keySize, 6);
+        ctx.fill();
+
+        ctx.strokeStyle = color + 'AA';
+        ctx.lineWidth = 2;
+        roundRect(ctx, kx - keySize / 2, ky - keySize / 2, keySize, keySize, 6);
+        ctx.stroke();
+
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold ' + keyFont + 'px "Press Start 2P", monospace';
+        ctx.fillText(GROUPS[i].key.toUpperCase(), kx, ky + 1);
       }
+      ctx.textBaseline = 'alphabetic';
     }
   }
 
@@ -630,14 +647,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('btn-play').addEventListener('click', () => game.start());
   document.getElementById('btn-replay').addEventListener('click', () => game.start());
   document.getElementById('btn-home').addEventListener('click', () => game.showScreen('home'));
-  document.getElementById('btn-quit').addEventListener('click', () => game.showScreen('home'));
-  document.getElementById('btn-revive').addEventListener('click', () => {
-    game.health = 100;
-    game.consecutiveMisses = 0;
-    game.state = 'playing';
-    game.showScreen('game');
-    game.loop();
-  });
+  document.getElementById('btn-quit').addEventListener('click', () => game.start());
+
 
   game.showScreen('home');
 });
