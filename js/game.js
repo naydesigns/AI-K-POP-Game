@@ -573,27 +573,29 @@ function roundRect(ctx, x, y, w, h, r) {
 
 // ---- Firebase & Leaderboard ----
 
+// Firebase initialized via module script in index.html → window.fbDB
+
 var cachedScores = null;
+try {
+  var stored = localStorage.getItem('glowrush_lb');
+  if (stored) cachedScores = JSON.parse(stored);
+} catch (e) {}
+
+function saveCache(scores) {
+  try { localStorage.setItem('glowrush_lb', JSON.stringify(scores)); } catch (e) {}
+}
 
 function prefetchLeaderboard() {
   var fb = window.fbDB;
-  if (!fb) {
-    console.warn('[Firebase] fbDB not ready, retrying...');
-    setTimeout(prefetchLeaderboard, 500);
-    return;
-  }
-  console.log('[Firebase] Connected. Project:', fb.db.app.options.projectId);
-  var q = fb.query(
-    fb.collection(fb.db, 'leaderboard'),
-    fb.orderBy('score', 'desc'),
-    fb.limit(20)
-  );
+  if (!fb) { setTimeout(prefetchLeaderboard, 500); return; }
+  var q = fb.query(fb.collection(fb.db, 'leaderboard'), fb.orderBy('score', 'desc'), fb.limit(20));
   fb.getDocs(q)
     .then(function(snap) {
       cachedScores = snap.docs.map(function(d) { return d.data(); });
-      console.log('[Firebase] Fetched from SERVER:', cachedScores.length, 'scores');
+      saveCache(cachedScores);
+      console.log('[Firebase] Prefetched', cachedScores.length, 'scores');
     })
-    .catch(function(e) { console.error('[Firebase] Fetch FAILED:', e.message || e); });
+    .catch(function(e) { console.warn('[Firebase] Prefetch failed:', e.message); });
 }
 
 prefetchLeaderboard();
@@ -609,27 +611,25 @@ const Leaderboard = {
 
   async submitScore(score, accuracy, maxCombo) {
     var fb = window.fbDB;
-    if (!fb) return;
+    if (!fb) { console.error('[Firebase] Cannot save: fbDB not loaded'); return; }
     var name = this.getPlayerName();
-    if (!name) return;
-    await fb.addDoc(fb.collection(fb.db, 'leaderboard'), {
+    if (!name) { console.error('[Firebase] Cannot save: no name'); return; }
+    console.log('[Firebase] Writing score:', name, score);
+    var doc = await fb.addDoc(fb.collection(fb.db, 'leaderboard'), {
       name: name,
       score: score,
       accuracy: accuracy,
       maxCombo: maxCombo,
-      timestamp: fb.serverTimestamp()
+      savedAt: new Date().toISOString()
     });
+    console.log('[Firebase] Write SUCCESS, doc ID:', doc.id);
   },
 
   async fetchTop(count) {
     count = count || 20;
     var fb = window.fbDB;
-    if (!fb) { console.warn('No db connection'); return []; }
-    var q = fb.query(
-      fb.collection(fb.db, 'leaderboard'),
-      fb.orderBy('score', 'desc'),
-      fb.limit(count)
-    );
+    if (!fb) return [];
+    var q = fb.query(fb.collection(fb.db, 'leaderboard'), fb.orderBy('score', 'desc'), fb.limit(count));
     var snap = await fb.getDocs(q);
     return snap.docs.map(function(d) { return d.data(); });
   },
@@ -690,13 +690,10 @@ var PostGame = {
     this.expanded = false;
 
     var title = document.getElementById('pg-title');
-    var subtitle = document.getElementById('pg-subtitle');
     if (outcome === 'results') {
       title.textContent = 'WAVE COMPLETE';
-      subtitle.textContent = 'Nice run!';
     } else {
       title.textContent = 'TRY AGAIN!';
-      subtitle.textContent = "Don't give up, fan!";
     }
 
     document.getElementById('pg-score').textContent = scoreData.score.toLocaleString();
@@ -760,51 +757,48 @@ var PostGame = {
 
     var saveBtn = document.getElementById('btn-save');
     saveBtn.disabled = true;
-    saveBtn.textContent = 'SAVING...';
+    saveBtn.textContent = 'SAVED';
+    document.getElementById('ne-hint').textContent = 'Score saved to leaderboard!';
 
     Leaderboard.setPlayerName(name);
-    try {
-      if (this.pendingScore) {
-        await Leaderboard.submitScore(
-          this.pendingScore.score,
-          this.pendingScore.accuracy,
-          this.pendingScore.maxCombo
-        );
-        this.pendingScore = null;
-      }
-      saveBtn.textContent = 'SAVED';
-      document.getElementById('ne-hint').textContent = 'Score saved to leaderboard!';
-      cachedScores = null;
-      this.loadLeaderboard();
-    } catch (err) {
-      console.error('Save failed:', err);
-      saveBtn.disabled = false;
-      saveBtn.textContent = 'SAVE';
-      document.getElementById('ne-hint').textContent = 'Save failed. Try again.';
+
+    if (this.pendingScore) {
+      var newEntry = { name: name, score: this.pendingScore.score, accuracy: this.pendingScore.accuracy, maxCombo: this.pendingScore.maxCombo };
+      var list = cachedScores ? cachedScores.slice() : [];
+      list.push(newEntry);
+      list.sort(function(a, b) { return b.score - a.score; });
+      if (list.length > 20) list = list.slice(0, 20);
+      cachedScores = list;
+      saveCache(cachedScores);
+      this.renderLeaderboard(cachedScores);
+
+      var pending = this.pendingScore;
+      this.pendingScore = null;
+      Leaderboard.submitScore(pending.score, pending.accuracy, pending.maxCombo)
+        .then(function() { console.log('[Firebase] Background sync complete'); prefetchLeaderboard(); })
+        .catch(function(err) { console.error('[Firebase] Background save FAILED:', err.message || err); });
     }
   },
 
-  loadLeaderboard: async function() {
+  loadLeaderboard: function() {
     var list = document.getElementById('pg-lb-list');
     var expandBtn = document.getElementById('pg-lb-expand');
 
-    if (cachedScores) {
+    if (cachedScores && cachedScores.length) {
       this.renderLeaderboard(cachedScores);
     } else {
-      list.innerHTML = '<p class="pg-lb-empty">LOADING...</p>';
+      list.innerHTML = '<p class="pg-lb-empty">NO SCORES YET. BE THE FIRST!</p>';
       expandBtn.style.display = 'none';
     }
 
-    try {
-      var scores = await Leaderboard.fetchTop();
-      cachedScores = scores;
-      console.log('[Firebase] loadLeaderboard got', scores.length, 'scores from server');
-      this.renderLeaderboard(scores);
-    } catch (e) {
-      if (!cachedScores) {
-        list.innerHTML = '<p class="pg-lb-empty">COULD NOT LOAD SCORES</p>';
+    var self = this;
+    Leaderboard.fetchTop().then(function(scores) {
+      if (scores.length) {
+        cachedScores = scores;
+        saveCache(scores);
+        self.renderLeaderboard(scores);
       }
-    }
+    }).catch(function() {});
   },
 
   renderLeaderboard: function(scores) {
