@@ -37,42 +37,61 @@
     <canvas id="game-canvas"></canvas>
   </div>
 
-  <!-- Results Screen -->
-  <div id="results-screen" class="screen">
-    <div class="results-content">
-      <h2 class="results-title">WAVE COMPLETE</h2>
-      <div class="results-song" id="result-song-name"></div>
-      <div class="results-grid">
-        <div class="stat-box">
-          <span class="stat-value" id="result-score">0</span>
-          <span class="stat-label">SCORE</span>
+  <!-- Post-Game Screen (score + leaderboard + name entry) -->
+  <div id="postgame-screen" class="screen">
+    <img src="assets/veil-group.png" alt="" class="pg-bg">
+    <div class="ne-grid"></div>
+    <div class="ne-scan"></div>
+
+    <div class="pg-scroll">
+      <div class="ne-column">
+        <div class="ne-float">
+          <h1 class="ne-title" id="pg-title">WAVE COMPLETE</h1>
         </div>
-        <div class="stat-box">
-          <span class="stat-value" id="result-perfect">0</span>
-          <span class="stat-label">PERFECT HITS</span>
+        <p class="ne-subtitle" id="pg-subtitle"></p>
+
+        <!-- Score stats -->
+        <div class="pg-stats">
+          <div class="pg-stat">
+            <span class="pg-stat-value" id="pg-score">0</span>
+            <span class="pg-stat-label">SCORE</span>
+          </div>
+          <div class="pg-stat">
+            <span class="pg-stat-value" id="pg-accuracy">0%</span>
+            <span class="pg-stat-label">ACCURACY</span>
+          </div>
+          <div class="pg-stat">
+            <span class="pg-stat-value" id="pg-combo">0</span>
+            <span class="pg-stat-label">MAX COMBO</span>
+          </div>
         </div>
-        <div class="stat-box">
-          <span class="stat-value" id="result-accuracy">0%</span>
-          <span class="stat-label">ACCURACY %</span>
+
+        <!-- Leaderboard -->
+        <div class="pg-leaderboard">
+          <h3 class="pg-lb-title">LEADERBOARD</h3>
+          <div id="pg-lb-list"></div>
+          <button class="pg-lb-expand" id="pg-lb-expand" style="display:none">EXPAND TO VIEW FULL LIST ▼</button>
         </div>
-        <div class="stat-box">
-          <span class="stat-value" id="result-combo">0</span>
-          <span class="stat-label">MAX COMBO</span>
+
+        <!-- Name entry -->
+        <div class="ne-console">
+          <div class="ne-console-header">
+            <span class="ne-hint" id="ne-hint">Add your name in the leaderboard</span>
+            <span class="ne-counter" id="ne-counter">0/8</span>
+          </div>
+          <div class="ne-field" id="ne-field">
+            <span class="ne-prompt">&gt;</span>
+            <span class="ne-display" id="ne-display">&nbsp;</span>
+            <span class="ne-caret" id="ne-caret"></span>
+            <input type="text" id="ne-input" maxlength="8" autocomplete="off" autocapitalize="off" spellcheck="false">
+            <button id="btn-save" class="ne-save">SAVE</button>
+          </div>
+        </div>
+
+        <div class="ne-actions">
+          <button id="btn-replay" class="btn-play">PLAY AGAIN</button>
         </div>
       </div>
-      <button id="btn-replay" class="btn-play">PLAY AGAIN</button>
-      <button id="btn-home" class="btn-secondary">HOME</button>
-    </div>
-  </div>
-
-  <!-- Fail Screen -->
-  <div id="fail-screen" class="screen">
-    <img src="assets/veil-group.png" alt="" class="fail-bg">
-    <div class="fail-content">
-      <h2 class="fail-title">TRY AGAIN!</h2>
-      <p class="fail-sub">Don't give up, fan!</p>
-      <div class="fail-score">SCORE: <span id="fail-score-val">0</span></div>
-      <button id="btn-quit" class="btn-play">PLAY AGAIN</button>
     </div>
   </div>
 

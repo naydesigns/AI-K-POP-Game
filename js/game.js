@@ -583,10 +583,28 @@ try {
     messagingSenderId: "1023934124578",
     appId: "1:1023934124578:web:691726936e17669323b07b"
   });
-  db = firebase.firestore();
+  db = firebase.app().firestore('glowrush-db');
+  db.enablePersistence({ synchronizeTabs: true }).catch(function() {});
 } catch (e) {
   console.warn('Firebase init failed:', e);
 }
+
+var cachedScores = null;
+
+function prefetchLeaderboard() {
+  if (!db) return;
+  db.collection('leaderboard')
+    .orderBy('score', 'desc')
+    .limit(20)
+    .get()
+    .then(function(snap) {
+      cachedScores = snap.docs.map(function(d) { return d.data(); });
+      console.log('Leaderboard prefetched:', cachedScores.length, 'scores');
+    })
+    .catch(function() {});
+}
+
+prefetchLeaderboard();
 
 const Leaderboard = {
   getPlayerName() {
@@ -611,11 +629,14 @@ const Leaderboard = {
   },
 
   async fetchTop(count = 20) {
-    if (!db) return [];
+    if (!db) { console.warn('No db connection'); return []; }
+    console.time('firestore-fetch');
     const snap = await db.collection('leaderboard')
       .orderBy('score', 'desc')
       .limit(count)
       .get();
+    console.timeEnd('firestore-fetch');
+    console.log('Fetched', snap.docs.length, 'scores');
     return snap.docs.map(d => d.data());
   },
 
@@ -638,17 +659,225 @@ const Leaderboard = {
   }
 };
 
+// ---- Profanity Filter ----
+
+var BLOCKED_WORDS = [
+  'FUCK','SHIT','ASS','DICK','BITCH','CUNT','DAMN','HELL',
+  'COCK','PUSSY','SLUT','WHORE','NIGGER','NIGGA','FAGGOT',
+  'FAG','RETARD','RAPE','PORN','SEX','NAZI','KILL','DIE'
+];
+
+function containsProfanity(name) {
+  var upper = name.toUpperCase().replace(/[^A-Z]/g, '');
+  return BLOCKED_WORDS.some(function(w) { return upper.includes(w); });
+}
+
+// ---- Post-Game Screen ----
+
+var PostGame = {
+  pendingScore: null,
+  expanded: false,
+
+  init: function() {
+    var input = document.getElementById('ne-input');
+    var field = document.getElementById('ne-field');
+
+    input.addEventListener('input', function() { PostGame.updateDisplay(); });
+    input.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') PostGame.save();
+    });
+    field.addEventListener('click', function() { input.focus(); });
+    document.getElementById('btn-save').addEventListener('click', function() { PostGame.save(); });
+    document.getElementById('pg-lb-expand').addEventListener('click', function() { PostGame.toggleExpand(); });
+  },
+
+  show: async function(outcome, scoreData) {
+    this.pendingScore = scoreData;
+    this.expanded = false;
+
+    var title = document.getElementById('pg-title');
+    var subtitle = document.getElementById('pg-subtitle');
+    if (outcome === 'results') {
+      title.textContent = 'WAVE COMPLETE';
+      subtitle.textContent = 'Nice run!';
+    } else {
+      title.textContent = 'TRY AGAIN!';
+      subtitle.textContent = "Don't give up, fan!";
+    }
+
+    document.getElementById('pg-score').textContent = scoreData.score.toLocaleString();
+    document.getElementById('pg-accuracy').textContent = scoreData.accuracy + '%';
+    document.getElementById('pg-combo').textContent = scoreData.maxCombo;
+
+    var input = document.getElementById('ne-input');
+    var saved = Leaderboard.getPlayerName();
+    input.value = (saved && saved !== 'GUEST') ? saved : '';
+    this.updateDisplay();
+    document.getElementById('ne-hint').textContent = 'Add your name in the leaderboard';
+
+    var saveBtn = document.getElementById('btn-save');
+    saveBtn.disabled = false;
+    saveBtn.textContent = 'SAVE';
+
+    this.loadLeaderboard();
+    setTimeout(function() { input.focus(); }, 100);
+  },
+
+  updateDisplay: function() {
+    var input = document.getElementById('ne-input');
+    var clean = input.value.toUpperCase().replace(/[^A-Z0-9 _-]/g, '').slice(0, 8);
+    input.value = clean;
+
+    var count = clean.length;
+    var hasName = clean.trim().length > 0;
+
+    document.getElementById('ne-display').textContent = clean || ' ';
+    document.getElementById('ne-counter').textContent = count + '/8';
+    document.getElementById('ne-counter').classList.toggle('warn', count >= 7);
+    document.getElementById('ne-caret').classList.toggle('hidden', count >= 8);
+
+    var saveBtn = document.getElementById('btn-save');
+    saveBtn.classList.toggle('active', hasName);
+
+    if (containsProfanity(clean)) {
+      document.getElementById('ne-hint').textContent = 'Choose an appropriate name';
+    } else {
+      document.getElementById('ne-hint').textContent = 'Add your name in the leaderboard';
+    }
+  },
+
+  save: async function() {
+    var input = document.getElementById('ne-input');
+    var name = input.value.trim();
+    if (!name) {
+      var field = document.getElementById('ne-field');
+      field.classList.add('shake');
+      setTimeout(function() { field.classList.remove('shake'); }, 450);
+      input.focus();
+      return;
+    }
+    if (containsProfanity(name)) {
+      document.getElementById('ne-hint').textContent = 'Please choose an appropriate name';
+      var field2 = document.getElementById('ne-field');
+      field2.classList.add('shake');
+      setTimeout(function() { field2.classList.remove('shake'); }, 450);
+      return;
+    }
+
+    var saveBtn = document.getElementById('btn-save');
+    saveBtn.disabled = true;
+    saveBtn.textContent = 'SAVING...';
+
+    Leaderboard.setPlayerName(name);
+    try {
+      if (this.pendingScore) {
+        await Leaderboard.submitScore(
+          this.pendingScore.score,
+          this.pendingScore.accuracy,
+          this.pendingScore.maxCombo
+        );
+        this.pendingScore = null;
+      }
+      saveBtn.textContent = 'SAVED';
+      document.getElementById('ne-hint').textContent = 'Score saved to leaderboard!';
+      cachedScores = null;
+      this.loadLeaderboard();
+    } catch (err) {
+      console.error('Save failed:', err);
+      saveBtn.disabled = false;
+      saveBtn.textContent = 'SAVE';
+      document.getElementById('ne-hint').textContent = 'Save failed. Try again.';
+    }
+  },
+
+  loadLeaderboard: async function() {
+    var list = document.getElementById('pg-lb-list');
+    var expandBtn = document.getElementById('pg-lb-expand');
+
+    if (cachedScores) {
+      this.renderLeaderboard(cachedScores);
+    } else {
+      list.innerHTML = '<p class="pg-lb-empty">LOADING...</p>';
+      expandBtn.style.display = 'none';
+    }
+
+    try {
+      var scores = await Leaderboard.fetchTop();
+      cachedScores = scores;
+      this.renderLeaderboard(scores);
+    } catch (e) {
+      if (!cachedScores) {
+        list.innerHTML = '<p class="pg-lb-empty">COULD NOT LOAD SCORES</p>';
+      }
+    }
+  },
+
+  renderLeaderboard: function(scores) {
+    var list = document.getElementById('pg-lb-list');
+    var expandBtn = document.getElementById('pg-lb-expand');
+
+    if (!scores.length) {
+      list.innerHTML = '<p class="pg-lb-empty">NO SCORES YET. BE THE FIRST!</p>';
+      expandBtn.style.display = 'none';
+      return;
+    }
+
+    var currentName = Leaderboard.getPlayerName();
+    var medals = ['\u{1F451}', '⭐', '✦'];
+    var rows = '';
+    for (var i = 0; i < scores.length; i++) {
+      var s = scores[i];
+      var rankClass = i < 3 ? ' top-' + (i + 1) : '';
+      var youClass = s.name === currentName ? ' is-you' : '';
+      var hiddenClass = i >= 5 ? ' pg-lb-hidden' : '';
+      var rank = i < 3 ? medals[i] : (i + 1);
+      rows += '<div class="pg-lb-row' + rankClass + youClass + hiddenClass + '" data-lb-extra="' + (i >= 5 ? '1' : '0') + '">'
+        + '<span class="pg-lb-rank">' + rank + '</span>'
+        + '<span class="pg-lb-name">' + s.name + '</span>'
+        + '<span class="pg-lb-score">' + s.score.toLocaleString() + '</span>'
+        + '</div>';
+    }
+
+    list.innerHTML = rows;
+    PostGame.expanded = false;
+    expandBtn.textContent = 'EXPAND TO VIEW FULL LIST ▼';
+    expandBtn.style.display = scores.length > 5 ? 'block' : 'none';
+  },
+
+  toggleExpand: function() {
+    this.expanded = !this.expanded;
+    var extras = document.querySelectorAll('[data-lb-extra="1"]');
+    var btn = document.getElementById('pg-lb-expand');
+    var expanded = this.expanded;
+    extras.forEach(function(el) { el.classList.toggle('pg-lb-hidden', !expanded); });
+    btn.textContent = this.expanded ? 'COLLAPSE ▲' : 'EXPAND TO VIEW FULL LIST ▼';
+  }
+};
+
 // ---- Init ----
 
-document.addEventListener('DOMContentLoaded', async () => {
-  const game = new FandomSort();
+document.addEventListener('DOMContentLoaded', async function() {
+  var game = new FandomSort();
   await game.loadChart('charts/neon-frequency.json');
 
-  document.getElementById('btn-play').addEventListener('click', () => game.start());
-  document.getElementById('btn-replay').addEventListener('click', () => game.start());
-  document.getElementById('btn-home').addEventListener('click', () => game.showScreen('home'));
-  document.getElementById('btn-quit').addEventListener('click', () => game.start());
+  PostGame.init();
 
+  document.getElementById('btn-play').addEventListener('click', function() { game.start(); });
+  document.getElementById('btn-replay').addEventListener('click', function() { game.start(); });
+
+  var origShowScreen = game.showScreen.bind(game);
+  game.showScreen = function(id) {
+    if (id === 'results' || id === 'failed') {
+      var total = game.stats.perfect + game.stats.good + game.stats.miss;
+      var acc = total > 0 ? Math.round((game.stats.perfect + game.stats.good) / total * 100) : 0;
+      var scoreData = { score: game.score, accuracy: acc, maxCombo: game.maxCombo };
+      document.querySelectorAll('.screen').forEach(function(s) { s.classList.remove('active'); });
+      document.getElementById('postgame-screen').classList.add('active');
+      PostGame.show(id, scoreData);
+    } else {
+      origShowScreen(id);
+    }
+  };
 
   game.showScreen('home');
 });
