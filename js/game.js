@@ -575,17 +575,14 @@ function roundRect(ctx, x, y, w, h, r) {
 
 var cachedScores = null;
 
-try {
-  var stored = localStorage.getItem('glowrush_lb_cache');
-  if (stored) cachedScores = JSON.parse(stored);
-} catch (e) {}
-
 function prefetchLeaderboard() {
   var fb = window.fbDB;
   if (!fb) {
+    console.warn('[Firebase] fbDB not ready, retrying...');
     setTimeout(prefetchLeaderboard, 500);
     return;
   }
+  console.log('[Firebase] Connected. Project:', fb.db.app.options.projectId);
   var q = fb.query(
     fb.collection(fb.db, 'leaderboard'),
     fb.orderBy('score', 'desc'),
@@ -594,10 +591,9 @@ function prefetchLeaderboard() {
   fb.getDocs(q)
     .then(function(snap) {
       cachedScores = snap.docs.map(function(d) { return d.data(); });
-      try { localStorage.setItem('glowrush_lb_cache', JSON.stringify(cachedScores)); } catch (e) {}
-      console.log('Leaderboard prefetched:', cachedScores.length, 'scores');
+      console.log('[Firebase] Fetched from SERVER:', cachedScores.length, 'scores');
     })
-    .catch(function(e) { console.warn('Prefetch failed:', e); });
+    .catch(function(e) { console.error('[Firebase] Fetch FAILED:', e.message || e); });
 }
 
 prefetchLeaderboard();
@@ -779,7 +775,6 @@ var PostGame = {
       saveBtn.textContent = 'SAVED';
       document.getElementById('ne-hint').textContent = 'Score saved to leaderboard!';
       cachedScores = null;
-      try { localStorage.removeItem('glowrush_lb_cache'); } catch (e) {}
       this.loadLeaderboard();
     } catch (err) {
       console.error('Save failed:', err);
@@ -803,7 +798,7 @@ var PostGame = {
     try {
       var scores = await Leaderboard.fetchTop();
       cachedScores = scores;
-      try { localStorage.setItem('glowrush_lb_cache', JSON.stringify(scores)); } catch (e) {}
+      console.log('[Firebase] loadLeaderboard got', scores.length, 'scores from server');
       this.renderLeaderboard(scores);
     } catch (e) {
       if (!cachedScores) {

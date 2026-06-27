@@ -8,8 +8,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@700&family=Press+Start+2P&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
   <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-    import { getFirestore, collection, addDoc, query, orderBy, limit, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
+    import { getFirestore, collection, addDoc, query, orderBy, limit, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
 
     const app = initializeApp({
       apiKey: "AIzaSyC42eeZ4G7jBgamowNoMEBGBW7SO4ZHIpk",
@@ -20,7 +20,7 @@
       appId: "1:1023934124578:web:691726936e17669323b07b"
     });
 
-    const db = getFirestore(app, 'glowrush-db');
+    const db = getFirestore(app);
     window.fbDB = { db, collection, addDoc, query, orderBy, limit, getDocs, serverTimestamp };
   </script>
 </head>
@@ -90,7 +90,7 @@
         <!-- Name entry -->
         <div class="ne-console">
           <div class="ne-console-header">
-            <span class="ne-hint" id="ne-hint">Add your name in the leaderboard</span>
+            <span class="ne-hint" id="ne-hint">Add your name to leaderboard</span>
             <span class="ne-counter" id="ne-counter">0/8</span>
           </div>
           <div class="ne-field" id="ne-field">
@@ -109,7 +109,7 @@
     </div>
   </div>
 
-  <footer class="site-footer">Designed and developed by Nayeon Lee</footer>
+  <footer class="site-footer">Designed & developed by Nayeon Lee</footer>
 
   <script src="js/game.js"></script>
 </body>
