@@ -720,9 +720,12 @@ body {
 
 #ne-input {
   position: absolute;
-  inset: 0;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 80px;
   opacity: 0;
-  width: 100%;
+  width: calc(100% - 80px);
   height: 100%;
   border: none;
   cursor: text;
@@ -747,6 +750,8 @@ body {
 }
 
 .ne-save {
+  position: relative;
+  z-index: 2;
   flex-shrink: 0;
   padding: 10px 18px;
   border: 2px solid rgba(154,247,226,0.4);

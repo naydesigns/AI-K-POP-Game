@@ -7,8 +7,22 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@700&family=Press+Start+2P&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getFirestore, collection, addDoc, query, orderBy, limit, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+    const app = initializeApp({
+      apiKey: "AIzaSyC42eeZ4G7jBgamowNoMEBGBW7SO4ZHIpk",
+      authDomain: "glowrush-5810a.firebaseapp.com",
+      projectId: "glowrush-5810a",
+      storageBucket: "glowrush-5810a.firebasestorage.app",
+      messagingSenderId: "1023934124578",
+      appId: "1:1023934124578:web:691726936e17669323b07b"
+    });
+
+    const db = getFirestore(app, 'glowrush-db');
+    window.fbDB = { db, collection, addDoc, query, orderBy, limit, getDocs, serverTimestamp };
+  </script>
 </head>
 <body>
 

@@ -573,35 +573,31 @@ function roundRect(ctx, x, y, w, h, r) {
 
 // ---- Firebase & Leaderboard ----
 
-let db = null;
-try {
-  firebase.initializeApp({
-    apiKey: "AIzaSyC42eeZ4G7jBgamowNoMEBGBW7SO4ZHIpk",
-    authDomain: "glowrush-5810a.firebaseapp.com",
-    projectId: "glowrush-5810a",
-    storageBucket: "glowrush-5810a.firebasestorage.app",
-    messagingSenderId: "1023934124578",
-    appId: "1:1023934124578:web:691726936e17669323b07b"
-  });
-  db = firebase.app().firestore('glowrush-db');
-  db.enablePersistence({ synchronizeTabs: true }).catch(function() {});
-} catch (e) {
-  console.warn('Firebase init failed:', e);
-}
-
 var cachedScores = null;
 
+try {
+  var stored = localStorage.getItem('glowrush_lb_cache');
+  if (stored) cachedScores = JSON.parse(stored);
+} catch (e) {}
+
 function prefetchLeaderboard() {
-  if (!db) return;
-  db.collection('leaderboard')
-    .orderBy('score', 'desc')
-    .limit(20)
-    .get()
+  var fb = window.fbDB;
+  if (!fb) {
+    setTimeout(prefetchLeaderboard, 500);
+    return;
+  }
+  var q = fb.query(
+    fb.collection(fb.db, 'leaderboard'),
+    fb.orderBy('score', 'desc'),
+    fb.limit(20)
+  );
+  fb.getDocs(q)
     .then(function(snap) {
       cachedScores = snap.docs.map(function(d) { return d.data(); });
+      try { localStorage.setItem('glowrush_lb_cache', JSON.stringify(cachedScores)); } catch (e) {}
       console.log('Leaderboard prefetched:', cachedScores.length, 'scores');
     })
-    .catch(function() {});
+    .catch(function(e) { console.warn('Prefetch failed:', e); });
 }
 
 prefetchLeaderboard();
@@ -616,28 +612,30 @@ const Leaderboard = {
   },
 
   async submitScore(score, accuracy, maxCombo) {
-    if (!db) return;
-    const name = this.getPlayerName();
+    var fb = window.fbDB;
+    if (!fb) return;
+    var name = this.getPlayerName();
     if (!name) return;
-    await db.collection('leaderboard').add({
-      name,
-      score,
-      accuracy,
-      maxCombo,
-      timestamp: firebase.firestore.FieldValue.serverTimestamp()
+    await fb.addDoc(fb.collection(fb.db, 'leaderboard'), {
+      name: name,
+      score: score,
+      accuracy: accuracy,
+      maxCombo: maxCombo,
+      timestamp: fb.serverTimestamp()
     });
   },
 
-  async fetchTop(count = 20) {
-    if (!db) { console.warn('No db connection'); return []; }
-    console.time('firestore-fetch');
-    const snap = await db.collection('leaderboard')
-      .orderBy('score', 'desc')
-      .limit(count)
-      .get();
-    console.timeEnd('firestore-fetch');
-    console.log('Fetched', snap.docs.length, 'scores');
-    return snap.docs.map(d => d.data());
+  async fetchTop(count) {
+    count = count || 20;
+    var fb = window.fbDB;
+    if (!fb) { console.warn('No db connection'); return []; }
+    var q = fb.query(
+      fb.collection(fb.db, 'leaderboard'),
+      fb.orderBy('score', 'desc'),
+      fb.limit(count)
+    );
+    var snap = await fb.getDocs(q);
+    return snap.docs.map(function(d) { return d.data(); });
   },
 
   renderList(scores) {
@@ -781,6 +779,7 @@ var PostGame = {
       saveBtn.textContent = 'SAVED';
       document.getElementById('ne-hint').textContent = 'Score saved to leaderboard!';
       cachedScores = null;
+      try { localStorage.removeItem('glowrush_lb_cache'); } catch (e) {}
       this.loadLeaderboard();
     } catch (err) {
       console.error('Save failed:', err);
@@ -804,6 +803,7 @@ var PostGame = {
     try {
       var scores = await Leaderboard.fetchTop();
       cachedScores = scores;
+      try { localStorage.setItem('glowrush_lb_cache', JSON.stringify(scores)); } catch (e) {}
       this.renderLeaderboard(scores);
     } catch (e) {
       if (!cachedScores) {
