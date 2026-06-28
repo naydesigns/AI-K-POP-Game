@@ -730,9 +730,6 @@ var PostGame = {
     var saveBtn = document.getElementById('btn-save');
     saveBtn.classList.toggle('active', hasName);
 
-    if (containsProfanity(clean)) {
-    } else {
-    }
   },
 
   save: async function() {
