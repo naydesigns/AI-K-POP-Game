@@ -262,7 +262,7 @@ body {
   display: flex;
   justify-content: center;
   align-items: flex-start;
-  padding: 80px 20px 30px;
+  padding: 16px;
   z-index: 1;
 }
 
@@ -273,7 +273,7 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 34px;
+  gap: 14px;
   z-index: 2;
 }
 
@@ -290,36 +290,31 @@ body {
   word-spacing: -12px;
 }
 
-/* Post-game stats */
+/* Post-game header */
 
-.pg-stats {
-  display: flex;
-  gap: 12px;
+.pg-header {
+  text-align: center;
   width: 100%;
   max-width: 560px;
 }
 
-.pg-stat {
-  flex: 1;
-  background: rgba(0,0,0,0.25);
-  border: 2px solid rgba(255,255,255,0.15);
-  padding: 14px 8px;
-  text-align: center;
-  box-shadow: 3px 3px 0 rgba(0,0,0,0.4);
-}
-
-.pg-stat-value {
-  display: block;
-  font-size: clamp(14px, 4vw, 20px);
-  color: #ffe033;
-  margin-bottom: 6px;
-}
-
-.pg-stat-label {
-  display: block;
-  font-size: clamp(5px, 1.5vw, 7px);
+.pg-song {
+  font-size: clamp(7px, 2vw, 9px);
+  letter-spacing: 2px;
   color: rgba(255,255,255,0.6);
+  margin-bottom: 8px;
+}
+
+.pg-stats-inline {
+  font-size: clamp(6px, 1.8vw, 8px);
+  color: rgba(255,255,255,0.5);
   letter-spacing: 1px;
+  margin-top: 8px;
+}
+
+.pg-stats-inline span {
+  color: #ffe033;
+  margin-right: 4px;
 }
 
 /* Leaderboard list */
@@ -346,8 +341,6 @@ body {
 }
 
 .pg-lb-row.top-1 { border-color: #FFD700; }
-.pg-lb-row.top-2 { border-color: #C0C0C0; }
-.pg-lb-row.top-3 { border-color: #CD7F32; }
 .pg-lb-row.is-you { background: rgba(154,247,226,0.12); border-color: #9af7e2; }
 
 .pg-lb-rank {
@@ -400,33 +393,23 @@ body {
 
 .pg-lb-expand:hover { background: rgba(255,255,255,0.1); color: #fff; }
 
-/* Name entry console */
+/* Name entry */
 
-.ne-console {
+.ne-section {
   width: 100%;
   max-width: 560px;
-  padding: 22px;
-  border-radius: 8px;
-  background: linear-gradient(180deg, rgba(20,12,40,0.62), rgba(12,8,30,0.74));
-  border: 2px solid rgba(173,255,236,0.55);
-  box-shadow: 0 0 0 4px rgba(0,0,0,0.25), 0 0 26px rgba(120,255,230,0.35), inset 0 0 30px rgba(120,90,220,0.25);
-}
-
-.ne-console-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 12px;
 }
 
 .ne-counter {
-  font-size: 10px;
+  display: block;
+  font-size: 8px;
   letter-spacing: 2px;
-  color: #9af7e2;
-  transition: color 0.15s;
+  color: rgba(255,255,255,0.45);
+  margin-top: 8px;
+  text-align: left;
 }
 
-.ne-counter.warn { color: #ff5c8a; }
+.ne-counter.warn { color: #ff5c8a !important; }
 
 .ne-field {
   position: relative;
@@ -485,13 +468,6 @@ body {
   border: none;
   cursor: text;
   font-size: 16px;
-}
-
-.ne-hint {
-  font-size: 7px;
-  letter-spacing: 1px;
-  color: rgba(255,255,255,0.55);
-  margin: 0;
 }
 
 /* Post-game actions */

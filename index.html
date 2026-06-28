@@ -12,16 +12,16 @@
     import { getFirestore, collection, addDoc, query, orderBy, limit, getDocs } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
 
     const app = initializeApp({
-      apiKey: "AIzaSyCKfSzHyDr-e7laJuZLevQcLQsPNlSYnAE",
-      authDomain: "glowrush.firebaseapp.com",
-      projectId: "glowrush",
-      storageBucket: "glowrush.firebasestorage.app",
-      messagingSenderId: "536924674667",
-      appId: "1:536924674667:web:6bcc9faeab783d4a98af2e"
+      apiKey: "AIzaSyC42eeZ4G7jBgamowNoMEBGBW7SO4ZHIpk",
+      authDomain: "glowrush-5810a.firebaseapp.com",
+      projectId: "glowrush-5810a",
+      storageBucket: "glowrush-5810a.firebasestorage.app",
+      messagingSenderId: "1023934124578",
+      appId: "1:1023934124578:web:691726936e17669323b07b"
     });
 
-    const db = getFirestore(app, 'glowrush-db');
-    window.fbDB = { db, collection, addDoc, query, orderBy, limit, getDocs };
+    const db = getFirestore(app);
+    window.fbDB = { db, collection, addDoc, query, orderBy, limit, getDocs, serverTimestamp };
   </script>
 </head>
 <body>
@@ -59,24 +59,14 @@
 
     <div class="pg-scroll">
       <div class="ne-column">
-        <div class="ne-float">
-          <h1 class="ne-title" id="pg-title">WAVE COMPLETE</h1>
-        </div>
-
-        <!-- Score stats -->
-        <div class="pg-stats">
-          <div class="pg-stat">
-            <span class="pg-stat-value" id="pg-score">0</span>
-            <span class="pg-stat-label">SCORE</span>
+        <div class="pg-header">
+          <div class="ne-float">
+            <h1 class="ne-title" id="pg-title">WAVE COMPLETE</h1>
           </div>
-          <div class="pg-stat">
-            <span class="pg-stat-value" id="pg-accuracy">0%</span>
-            <span class="pg-stat-label">ACCURACY</span>
-          </div>
-          <div class="pg-stat">
-            <span class="pg-stat-value" id="pg-combo">0</span>
-            <span class="pg-stat-label">MAX COMBO</span>
-          </div>
+          <p class="pg-song" id="pg-song">NEON FREQUENCY — VEIL</p>
+          <p class="pg-stats-inline">
+            SCORE <span id="pg-score">0</span> · ACCURACY <span id="pg-accuracy">0%</span> · COMBO <span id="pg-combo">0</span>
+          </p>
         </div>
 
         <!-- Leaderboard -->
@@ -87,11 +77,8 @@
         </div>
 
         <!-- Name entry -->
-        <div class="ne-console">
-          <div class="ne-console-header">
-            <span class="ne-hint" id="ne-hint">Add your name to leaderboard</span>
-            <span class="ne-counter" id="ne-counter">0/8</span>
-          </div>
+        <div class="ne-section">
+          <h3 class="pg-lb-title">ADD YOUR NAME TO LEADERBOARD</h3>
           <div class="ne-field" id="ne-field">
             <span class="ne-prompt">&gt;</span>
             <span class="ne-display" id="ne-display">&nbsp;</span>
@@ -99,6 +86,7 @@
             <input type="text" id="ne-input" maxlength="8" autocomplete="off" autocapitalize="off" spellcheck="false">
             <button id="btn-save" class="ne-save">SAVE</button>
           </div>
+          <span class="ne-counter" id="ne-counter">0/8 characters</span>
         </div>
 
         <div class="ne-actions">

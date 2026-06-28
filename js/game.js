@@ -696,6 +696,7 @@ var PostGame = {
       title.textContent = 'TRY AGAIN!';
     }
 
+    document.getElementById('pg-song').textContent = game.chart.title + ' — ' + game.chart.artist;
     document.getElementById('pg-score').textContent = scoreData.score.toLocaleString();
     document.getElementById('pg-accuracy').textContent = scoreData.accuracy + '%';
     document.getElementById('pg-combo').textContent = scoreData.maxCombo;
@@ -704,7 +705,6 @@ var PostGame = {
     var saved = Leaderboard.getPlayerName();
     input.value = (saved && saved !== 'GUEST') ? saved : '';
     this.updateDisplay();
-    document.getElementById('ne-hint').textContent = 'Add your name in the leaderboard';
 
     var saveBtn = document.getElementById('btn-save');
     saveBtn.disabled = false;
@@ -723,7 +723,7 @@ var PostGame = {
     var hasName = clean.trim().length > 0;
 
     document.getElementById('ne-display').textContent = clean || ' ';
-    document.getElementById('ne-counter').textContent = count + '/8';
+    document.getElementById('ne-counter').textContent = count + '/8 characters';
     document.getElementById('ne-counter').classList.toggle('warn', count >= 7);
     document.getElementById('ne-caret').classList.toggle('hidden', count >= 8);
 
@@ -731,9 +731,7 @@ var PostGame = {
     saveBtn.classList.toggle('active', hasName);
 
     if (containsProfanity(clean)) {
-      document.getElementById('ne-hint').textContent = 'Choose an appropriate name';
     } else {
-      document.getElementById('ne-hint').textContent = 'Add your name in the leaderboard';
     }
   },
 
@@ -748,7 +746,6 @@ var PostGame = {
       return;
     }
     if (containsProfanity(name)) {
-      document.getElementById('ne-hint').textContent = 'Please choose an appropriate name';
       var field2 = document.getElementById('ne-field');
       field2.classList.add('shake');
       setTimeout(function() { field2.classList.remove('shake'); }, 450);
@@ -758,7 +755,6 @@ var PostGame = {
     var saveBtn = document.getElementById('btn-save');
     saveBtn.disabled = true;
     saveBtn.textContent = 'SAVED';
-    document.getElementById('ne-hint').textContent = 'Score saved to leaderboard!';
 
     Leaderboard.setPlayerName(name);
 
@@ -812,14 +808,13 @@ var PostGame = {
     }
 
     var currentName = Leaderboard.getPlayerName();
-    var medals = ['\u{1F451}', '⭐', '✦'];
     var rows = '';
     for (var i = 0; i < scores.length; i++) {
       var s = scores[i];
-      var rankClass = i < 3 ? ' top-' + (i + 1) : '';
+      var rankClass = i === 0 ? ' top-1' : '';
       var youClass = s.name === currentName ? ' is-you' : '';
       var hiddenClass = i >= 5 ? ' pg-lb-hidden' : '';
-      var rank = i < 3 ? medals[i] : (i + 1);
+      var rank = i === 0 ? '\u{1F451}' : (i + 1);
       rows += '<div class="pg-lb-row' + rankClass + youClass + hiddenClass + '" data-lb-extra="' + (i >= 5 ? '1' : '0') + '">'
         + '<span class="pg-lb-rank">' + rank + '</span>'
         + '<span class="pg-lb-name">' + s.name + '</span>'
