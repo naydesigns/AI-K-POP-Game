@@ -12,16 +12,16 @@
     import { getFirestore, collection, addDoc, query, orderBy, limit, getDocs } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
 
     const app = initializeApp({
-      apiKey: "AIzaSyC42eeZ4G7jBgamowNoMEBGBW7SO4ZHIpk",
-      authDomain: "glowrush-5810a.firebaseapp.com",
-      projectId: "glowrush-5810a",
-      storageBucket: "glowrush-5810a.firebasestorage.app",
-      messagingSenderId: "1023934124578",
-      appId: "1:1023934124578:web:691726936e17669323b07b"
+      apiKey: "AIzaSyCKfSzHyDr-e7laJuZLevQcLQsPNlSYnAE",
+      authDomain: "glowrush.firebaseapp.com",
+      projectId: "glowrush",
+      storageBucket: "glowrush.firebasestorage.app",
+      messagingSenderId: "536924674667",
+      appId: "1:536924674667:web:6bcc9faeab783d4a98af2e"
     });
 
-    const db = getFirestore(app);
-    window.fbDB = { db, collection, addDoc, query, orderBy, limit, getDocs, serverTimestamp };
+    const db = getFirestore(app, 'glowrush-db');
+    window.fbDB = { db, collection, addDoc, query, orderBy, limit, getDocs };
   </script>
 </head>
 <body>
