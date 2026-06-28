@@ -696,7 +696,7 @@ var PostGame = {
       title.textContent = 'TRY AGAIN!';
     }
 
-    document.getElementById('pg-song').textContent = game.chart.title + ' — ' + game.chart.artist;
+    document.getElementById('pg-song').textContent = scoreData.songTitle + ' — ' + scoreData.songArtist;
     document.getElementById('pg-score').textContent = scoreData.score.toLocaleString();
     document.getElementById('pg-accuracy').textContent = scoreData.accuracy + '%';
     document.getElementById('pg-combo').textContent = scoreData.maxCombo;
@@ -851,7 +851,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     if (id === 'results' || id === 'failed') {
       var total = game.stats.perfect + game.stats.good + game.stats.miss;
       var acc = total > 0 ? Math.round((game.stats.perfect + game.stats.good) / total * 100) : 0;
-      var scoreData = { score: game.score, accuracy: acc, maxCombo: game.maxCombo };
+      var scoreData = { score: game.score, accuracy: acc, maxCombo: game.maxCombo, songTitle: game.chart.title, songArtist: game.chart.artist };
       document.querySelectorAll('.screen').forEach(function(s) { s.classList.remove('active'); });
       document.getElementById('postgame-screen').classList.add('active');
       PostGame.show(id, scoreData);
