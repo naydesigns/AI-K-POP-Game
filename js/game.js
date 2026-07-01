@@ -11,44 +11,12 @@ const HEALTH_DRAIN = 12;
 const SCROLL_TIME = 1800;
 const COUNTDOWN_MS = 3000;
 
-// ---- Audio ----
-
-class SFX {
-  constructor() {
-    this.ctx = null;
-  }
-
-  init() {
-    if (this.ctx) return;
-    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
-  }
-
-  play(freq, dur) {
-    if (!this.ctx) return;
-    const osc = this.ctx.createOscillator();
-    const gain = this.ctx.createGain();
-    osc.connect(gain);
-    gain.connect(this.ctx.destination);
-    osc.type = 'sine';
-    osc.frequency.value = freq;
-    gain.gain.setValueAtTime(0.15, this.ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + dur);
-    osc.start();
-    osc.stop(this.ctx.currentTime + dur);
-  }
-
-  perfect() { this.play(880, 0.08); }
-  good()    { this.play(660, 0.08); }
-  miss()    { this.play(200, 0.15); }
-}
-
 // ---- Game ----
 
 class FandomSort {
   constructor() {
     this.canvas = document.getElementById('game-canvas');
     this.ctx = this.canvas.getContext('2d');
-    this.sfx = new SFX();
     this.chart = null;
     this.dpr = window.devicePixelRatio || 1;
     this.reset();
@@ -69,6 +37,9 @@ class FandomSort {
     this.tiles = [];
     this.feedbacks = [];
     this.laneFlashes = [0, 0, 0, 0];
+    this.laneDown = [false, false, false, false];
+    this.activeHolds = [null, null, null, null];
+    this.seekOffset = 0;
     this.startTime = 0;
     this.animFrame = null;
   }
@@ -97,40 +68,73 @@ class FandomSort {
 
     document.addEventListener('keydown', (e) => {
       const lane = keyMap[e.key.toLowerCase()];
-      if (lane !== undefined && this.state === 'playing') {
-        this.handleTap(lane);
-      }
+      if (lane !== undefined && !e.repeat) this.handlePress(lane);
+    });
+
+    document.addEventListener('keyup', (e) => {
+      const lane = keyMap[e.key.toLowerCase()];
+      if (lane !== undefined) this.handleRelease(lane);
     });
 
     this.canvas.addEventListener('touchstart', (e) => {
       e.preventDefault();
       for (const t of e.changedTouches) {
-        const rect = this.canvas.getBoundingClientRect();
-        const x = t.clientX - rect.left;
-        const lane = Math.floor(x / (rect.width / 4));
-        if (lane >= 0 && lane < 4) this.handleTap(lane);
+        const lane = this.laneFromX(t.clientX);
+        if (lane !== null) this.handlePress(lane);
+      }
+    }, { passive: false });
+
+    this.canvas.addEventListener('touchend', (e) => {
+      e.preventDefault();
+      for (const t of e.changedTouches) {
+        const lane = this.laneFromX(t.clientX);
+        if (lane !== null) this.handleRelease(lane);
       }
     }, { passive: false });
 
     this.canvas.addEventListener('mousedown', (e) => {
-      const rect = this.canvas.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const lane = Math.floor(x / (rect.width / 4));
-      if (lane >= 0 && lane < 4) this.handleTap(lane);
+      const lane = this.laneFromX(e.clientX);
+      if (lane !== null) {
+        this.mouseLane = lane;
+        this.handlePress(lane);
+      }
+    });
+
+    document.addEventListener('mouseup', () => {
+      if (this.mouseLane !== null && this.mouseLane !== undefined) {
+        this.handleRelease(this.mouseLane);
+        this.mouseLane = null;
+      }
     });
 
     document.addEventListener('touchmove', (e) => e.preventDefault(), { passive: false });
   }
 
-  handleTap(lane) {
-    if (this.state !== 'playing') return;
-    const elapsed = performance.now() - this.startTime;
+  laneFromX(clientX) {
+    const rect = this.canvas.getBoundingClientRect();
+    const x = clientX - rect.left;
+    const lane = Math.floor(x / (rect.width / 4));
+    return (lane >= 0 && lane < 4) ? lane : null;
+  }
+
+  getElapsed() {
+    if (this.music && !this.music.paused && this.music.currentTime > 0) {
+      return this.music.currentTime * 1000;
+    }
+    const raw = performance.now() - this.startTime;
+    return raw < 0 ? raw : raw + this.seekOffset;
+  }
+
+  handlePress(lane) {
+    if (this.state !== 'playing' || this.laneDown[lane]) return;
+    this.laneDown[lane] = true;
+    const elapsed = this.getElapsed();
 
     let closest = null;
     let closestDiff = Infinity;
 
     for (const tile of this.tiles) {
-      if (tile.hit || tile.missed || tile.lane !== lane) continue;
+      if (tile.hit || tile.missed || tile.holding || tile.lane !== lane) continue;
       const diff = Math.abs(elapsed - tile.time_ms);
       if (diff < closestDiff) {
         closest = tile;
@@ -140,13 +144,38 @@ class FandomSort {
 
     if (!closest || closestDiff > TIMING.GOOD + 30) return;
 
+    const rating = closestDiff <= TIMING.PERFECT ? 'PERFECT' : (closestDiff <= TIMING.GOOD ? 'GOOD' : null);
+    if (!rating) return;
+
     this.laneFlashes[lane] = performance.now();
 
-    if (closestDiff <= TIMING.PERFECT) {
-      this.registerHit(closest, 'PERFECT');
-    } else if (closestDiff <= TIMING.GOOD) {
-      this.registerHit(closest, 'GOOD');
+    if (closest.type === 'hold') {
+      this.startHold(closest, rating);
+    } else {
+      this.registerHit(closest, rating);
     }
+  }
+
+  handleRelease(lane) {
+    this.laneDown[lane] = false;
+    const tile = this.activeHolds[lane];
+    if (!tile) return;
+
+    if (this.getElapsed() >= tile.endTime - TIMING.GOOD) {
+      this.completeHold(tile);
+    } else {
+      this.breakHold(tile);
+    }
+  }
+
+  pushFeedback(lane, text, color) {
+    this.feedbacks.push({
+      text,
+      x: lane * this.laneW + this.laneW / 2,
+      y: this.hitY,
+      time: performance.now(),
+      color,
+    });
   }
 
   registerHit(tile, rating) {
@@ -157,10 +186,8 @@ class FandomSort {
 
     if (rating === 'PERFECT') {
       this.stats.perfect++;
-      this.sfx.perfect();
     } else {
       this.stats.good++;
-      this.sfx.good();
     }
 
     this.combo++;
@@ -168,13 +195,52 @@ class FandomSort {
     if (this.combo > this.maxCombo) this.maxCombo = this.combo;
     this.multiplier = Math.min(8, 1 + Math.floor(this.combo / 10));
 
-    this.feedbacks.push({
-      text: rating,
-      x: tile.lane * this.laneW + this.laneW / 2,
-      y: this.hitY,
-      time: performance.now(),
-      color: rating === 'PERFECT' ? '#FFD700' : '#00FF88',
-    });
+    this.pushFeedback(tile.lane, rating, rating === 'PERFECT' ? '#FFD700' : '#00FF88');
+  }
+
+  startHold(tile, rating) {
+    tile.holding = true;
+    tile.headRating = rating;
+    this.consecutiveMisses = 0;
+
+    if (rating === 'PERFECT') {
+      this.stats.perfect++;
+    } else {
+      this.stats.good++;
+    }
+
+    this.combo++;
+    this.score += SCORES[rating] * this.multiplier;
+    if (this.combo > this.maxCombo) this.maxCombo = this.combo;
+    this.multiplier = Math.min(8, 1 + Math.floor(this.combo / 10));
+
+    this.activeHolds[tile.lane] = tile;
+    this.pushFeedback(tile.lane, rating, rating === 'PERFECT' ? '#FFD700' : '#00FF88');
+  }
+
+  completeHold(tile) {
+    tile.hit = true;
+    tile.holding = false;
+    tile.hitTime = performance.now();
+    this.activeHolds[tile.lane] = null;
+    this.score += Math.round(SCORES[tile.headRating] * 0.5) * this.multiplier;
+    this.pushFeedback(tile.lane, 'HOLD!', '#00D4FF');
+  }
+
+  breakHold(tile) {
+    tile.holding = false;
+    tile.missed = true;
+    this.activeHolds[tile.lane] = null;
+    this.stats.miss++;
+    this.combo = 0;
+    this.multiplier = 1;
+    this.consecutiveMisses++;
+    this.health = Math.max(0, this.health - HEALTH_DRAIN);
+    this.pushFeedback(tile.lane, 'MISS', '#FF4444');
+
+    if (this.consecutiveMisses >= 3 || this.health <= 0) {
+      this.endGame('failed');
+    }
   }
 
   registerMiss(tile) {
@@ -184,15 +250,8 @@ class FandomSort {
     this.multiplier = 1;
     this.consecutiveMisses++;
     this.health = Math.max(0, this.health - HEALTH_DRAIN);
-    this.sfx.miss();
 
-    this.feedbacks.push({
-      text: 'MISS',
-      x: tile.lane * this.laneW + this.laneW / 2,
-      y: this.hitY,
-      time: performance.now(),
-      color: '#FF4444',
-    });
+    this.pushFeedback(tile.lane, 'MISS', '#FF4444');
 
     if (this.consecutiveMisses >= 3 || this.health <= 0) {
       this.endGame('failed');
@@ -214,17 +273,32 @@ class FandomSort {
     }
   }
 
+  getSeekParam() {
+    const val = Number(new URLSearchParams(window.location.search).get('seek'));
+    return Number.isFinite(val) && val > 0 ? val : 0;
+  }
+
   start() {
     this.reset();
-    this.sfx.init();
     this.tiles = this.chart.notes.map((n, i) => ({
       ...n, id: i, hit: false, missed: false, hitTime: null, rating: null,
+      holding: false, headRating: null,
+      endTime: n.type === 'hold' ? n.time_ms + (n.duration_ms || 0) : n.time_ms,
     }));
+
+    const seekMs = this.getSeekParam();
+    this.seekOffset = seekMs;
+    if (seekMs > 0) {
+      for (const tile of this.tiles) {
+        if (tile.endTime < seekMs) tile.hit = true;
+      }
+    }
+
     this.state = 'playing';
     this.showScreen('game');
     this.startTime = performance.now() + COUNTDOWN_MS;
     if (this.music) {
-      this.music.currentTime = 0;
+      this.music.currentTime = seekMs / 1000;
       setTimeout(() => {
         if (this.state === 'playing') this.music.play();
       }, COUNTDOWN_MS);
@@ -240,13 +314,19 @@ class FandomSort {
   }
 
   update() {
-    const elapsed = performance.now() - this.startTime;
+    const elapsed = this.getElapsed();
 
     for (const tile of this.tiles) {
-      if (tile.hit || tile.missed) continue;
+      if (tile.hit || tile.missed || tile.holding) continue;
       if (elapsed > tile.time_ms + TIMING.GOOD + 30) {
         this.registerMiss(tile);
         if (this.state !== 'playing') return;
+      }
+    }
+
+    for (const tile of this.tiles) {
+      if (tile.type === 'hold' && tile.holding && elapsed >= tile.endTime) {
+        this.completeHold(tile);
       }
     }
 
@@ -275,7 +355,7 @@ class FandomSort {
     const ctx = this.ctx;
     const w = this.w;
     const h = this.h;
-    const elapsed = performance.now() - this.startTime;
+    const elapsed = this.getElapsed();
 
     ctx.clearRect(0, 0, w, h);
 
@@ -370,42 +450,90 @@ class FandomSort {
   drawTiles(ctx, elapsed) {
     for (const tile of this.tiles) {
       if (tile.hit || tile.missed) continue;
-
-      const timeToHit = tile.time_ms - elapsed;
-      const progress = 1 - timeToHit / SCROLL_TIME;
-      const y = progress * this.hitY - this.tileH / 2;
-
-      if (y < -this.tileH || y > this.h) continue;
-
-      const x = tile.lane * this.laneW;
-      const color = GROUPS[tile.lane].color;
-      const margin = 5;
-      const tw = this.laneW - margin * 2;
-
-      ctx.fillStyle = 'rgba(0,0,0,0.45)';
-      roundRect(ctx, x + margin + 3, y + 3, tw, this.tileH, 10);
-      ctx.fill();
-
-      ctx.fillStyle = color;
-      ctx.shadowColor = color;
-      ctx.shadowBlur = 8;
-      roundRect(ctx, x + margin, y, tw, this.tileH, 10);
-      ctx.fill();
-      ctx.shadowBlur = 0;
-
-      const hlGrad = ctx.createLinearGradient(0, y, 0, y + this.tileH);
-      hlGrad.addColorStop(0, 'rgba(255,255,255,0.25)');
-      hlGrad.addColorStop(0.5, 'rgba(255,255,255,0.05)');
-      hlGrad.addColorStop(1, 'transparent');
-      ctx.fillStyle = hlGrad;
-      roundRect(ctx, x + margin + 2, y + 2, tw - 4, this.tileH - 4, 8);
-      ctx.fill();
-
-      ctx.fillStyle = 'rgba(255,255,255,0.7)';
-      ctx.font = '18px sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText('✦', x + this.laneW / 2, y + this.tileH / 2 + 6);
+      if (tile.type === 'hold') {
+        this.drawHoldTile(ctx, tile, elapsed);
+      } else {
+        this.drawTapTile(ctx, tile, elapsed);
+      }
     }
+  }
+
+  drawTapTile(ctx, tile, elapsed) {
+    const timeToHit = tile.time_ms - elapsed;
+    const progress = 1 - timeToHit / SCROLL_TIME;
+    const y = progress * this.hitY - this.tileH / 2;
+
+    if (y < -this.tileH || y > this.h) return;
+
+    const x = tile.lane * this.laneW;
+    const color = GROUPS[tile.lane].color;
+    const margin = 5;
+    const tw = this.laneW - margin * 2;
+
+    ctx.fillStyle = 'rgba(0,0,0,0.45)';
+    roundRect(ctx, x + margin + 3, y + 3, tw, this.tileH, 10);
+    ctx.fill();
+
+    ctx.fillStyle = color;
+    ctx.shadowColor = color;
+    ctx.shadowBlur = 8;
+    roundRect(ctx, x + margin, y, tw, this.tileH, 10);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+
+    const hlGrad = ctx.createLinearGradient(0, y, 0, y + this.tileH);
+    hlGrad.addColorStop(0, 'rgba(255,255,255,0.25)');
+    hlGrad.addColorStop(0.5, 'rgba(255,255,255,0.05)');
+    hlGrad.addColorStop(1, 'transparent');
+    ctx.fillStyle = hlGrad;
+    roundRect(ctx, x + margin + 2, y + 2, tw - 4, this.tileH - 4, 8);
+    ctx.fill();
+
+    ctx.fillStyle = 'rgba(255,255,255,0.7)';
+    ctx.font = '18px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('✦', x + this.laneW / 2, y + this.tileH / 2 + 6);
+  }
+
+  drawHoldTile(ctx, tile, elapsed) {
+    const headProgress = 1 - (tile.time_ms - elapsed) / SCROLL_TIME;
+    const tailProgress = 1 - (tile.endTime - elapsed) / SCROLL_TIME;
+    const headY = tile.holding ? this.hitY : headProgress * this.hitY;
+    const tailY = tailProgress * this.hitY;
+
+    const topY = Math.min(headY, tailY) - this.tileH / 2;
+    const bottomY = Math.max(headY, tailY) + this.tileH / 2;
+
+    if (bottomY < -this.tileH || topY > this.h) return;
+
+    const x = tile.lane * this.laneW;
+    const color = GROUPS[tile.lane].color;
+    const margin = 5;
+    const tw = this.laneW - margin * 2;
+    const barH = bottomY - topY;
+
+    ctx.fillStyle = 'rgba(0,0,0,0.45)';
+    roundRect(ctx, x + margin + 3, topY + 3, tw, barH, 10);
+    ctx.fill();
+
+    ctx.fillStyle = tile.holding ? color : color + 'CC';
+    ctx.shadowColor = color;
+    ctx.shadowBlur = tile.holding ? 16 : 8;
+    roundRect(ctx, x + margin, topY, tw, barH, 10);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+
+    const hlGrad = ctx.createLinearGradient(0, topY, 0, bottomY);
+    hlGrad.addColorStop(0, 'rgba(255,255,255,0.3)');
+    hlGrad.addColorStop(1, 'rgba(255,255,255,0.05)');
+    ctx.fillStyle = hlGrad;
+    roundRect(ctx, x + margin + 2, topY + 2, tw - 4, barH - 4, 8);
+    ctx.fill();
+
+    ctx.fillStyle = 'rgba(255,255,255,0.7)';
+    ctx.font = '18px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('✦', x + this.laneW / 2, topY + this.tileH / 2 + 6);
   }
 
   drawHitEffects(ctx) {
